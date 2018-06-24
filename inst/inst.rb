@@ -194,7 +194,7 @@ class Idb
     # bind the 1st unused entry for this name to its archive position
     def setdata(name, arc, pos)
 	@entries.each { |e|
-	    if e[:path] == name && e[:size] && ! e[:_archive]
+	    if e[:path] == name && e[:size] && ! e[:_archive] && e[:subsystem].start_with?(arc.name)
 		e[:_archive] = arc
 		e[:_position] = pos
 		return _length(e)
@@ -320,6 +320,7 @@ class Archive
     # parse the archive file
     def initialize(file, idb)
 	@idb = idb
+	@name = File.basename(file)
 	begin @fd = File.open(file)
 	    rescue; puts "WARNING: can't open archive #{file}"; return nil
 	end
@@ -342,6 +343,11 @@ class Archive
 	@fd.read(len)
     end
 
+    # return subsystem base this archive belongs to
+    def name
+	return @name
+    end
+
     # return data from the archive
     def getdata(pos, len)
 	@fd.pos = pos
@@ -356,7 +362,8 @@ class Archive
     end
 end
 
-def usage
+def usage(code)
+    puts "error: #{code}"
     puts "usage: inst [sfciu] <package> [-r<extraction path>] [-s<subsystem pattern>]* [-m<machine tag>=<value>]* -x -v"
     puts "	s: list subsystems; f: list files; c: check -m parameters; i, u: (un)install"
     puts "	-r: install base; -s: subsystem; -m: machine tags; -v: verbose"
@@ -374,7 +381,7 @@ if ARGV.length >= 2 && FileTest.readable?(ARGV[1] + ".idb")
 	Archive.new(f, idb) unless f =~ /\.idb$/
     }
 else
-    usage()
+    usage("cannot open idb file")
 end
 
 # parse options
@@ -399,7 +406,7 @@ ARGV[2..-1].each { |a|
     when "-v"
 	idb.verbose = true
     else
-	usage()
+	usage("unknown argument " + a)
     end
 }
 # match all subsystems if none was given
@@ -424,5 +431,5 @@ when "t"	# DEBUG: list tokens found in idb files
 when "v"	# DEBUG: list values found for given token
     puts "#{idb.values(token).join("\n")}"
 else
-    usage()
+    usage("unkown command" + ARGV[0])
 end
