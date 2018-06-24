@@ -1,0 +1,11 @@
+
+[Desktop Entry]
+Name=ElectroPaint
+Exec=/usr/lib/xscreensaver/electropaint
+TryExec=/usr/lib/xscreensaver/electropaint
+Comment=SGI's /usr/sbin/ep
+StartupNotify=false
+Terminal=false
+Type=Application
+Categories=Screensaver
+OnlyShowIn=GNOME;

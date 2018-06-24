@@ -1,0 +1,10 @@
+#! /bin/sh
+
+ex=$1; shift
+a0=$1; shift
+
+export QEMU_RESERVED_VA=1280M
+export QEMU_LD_PREFIX=$IGLROOT${IGLROOT:+:}$IRIXROOT
+export QEMU_SET_ENV=LANG=C
+
+exec qemu-irix -0 $a0 $ex "$@"

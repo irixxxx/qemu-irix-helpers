@@ -1,0 +1,61 @@
+#! /bin/bash
+
+# $BASE is the installation base for your wrapper scripts
+if [ -z "$BASE" ]; then
+	BASE=/usr/local/bin
+fi
+# default wrapper scripts
+QEMU32=$BASE/qemu-solaris-wrapper
+QEMU64=$BASE/qemu-solaris64-wrapper
+# parameter override of wrappers?
+if [ -n "$1" ]; then QEMU32=$1; fi
+if [ -n "$2" ]; then QEMU64=$2; fi
+
+# delete old binfmt entries
+[ -e /proc/sys/fs/binfmt_misc/solaris ] && echo -1 > /proc/sys/fs/binfmt_misc/solaris
+[ -e /proc/sys/fs/binfmt_misc/solaris64 ] && echo -1 > /proc/sys/fs/binfmt_misc/solaris64
+
+# definition for 00 and ff bytes
+N='\x00'
+N4=$N$N$N$N
+N8=$N$N$N$N$N$N$N$N
+F=$'\xff'
+F4=$F$F$F$F
+F8=$F$F$F$F$F$F$F$F
+
+# ELF ident:Magic
+EHDR=$'\x7fELF'
+MHDR=$F4
+# ELF ident:Class (32bit=1, 64bit=2)
+EH32=$'\x01'
+EH64=$'\x02'
+MHCL=$F
+# ELF ident:Data (MSB=2)
+EHMSB=$'\x02'
+MHDAT=$F
+# ELF ident:Version (1)
+EHVER=$'\x01'
+MHVER=$F
+# ELF ident:Abi (Solaris=6, ignored since not all executables have this correct)
+EHABI=$N
+MHABI=$N
+# ELF type (static executable=2, dynamic executable=3)
+ETYPE=$N$'\x02'
+MTYPE=$F$'\xfe'
+# ELF machine (Sparc=2, SparcV9=43)
+EMACH=$N$'\x02'
+MMACH=$F$F
+# ELF version (1)
+EVERS=$N$N$N$'\x01'
+MVERS=$F4
+
+# magic and masks for binfmt
+HEAD32=$EHDR$EH32$EHMSB$EHVER$EHABI$N8$ETYPE$EMACH
+MASK32=$MHDR$MHCL$MHDAT$MHVER$MHABI$F8$MTYPE$MMACH
+HEAD64=$EHDR$EH64$EHMSB$EHVER$EHABI$N8$ETYPE$EMACH
+MASK64=$MHDR$MHCL$MHDAT$MHVER$MHABI$F8$MTYPE$MMACH
+
+# install binfmts for IRIX
+echo  :solaris:M::${HEAD32}:${MASK32}:${QEMU32}:P > /proc/sys/fs/binfmt_misc/register
+#echo  :solaris64:M::${HEAD64}:${MASK64}:${QEMU64}:P > /proc/sys/fs/binfmt_misc/register
+

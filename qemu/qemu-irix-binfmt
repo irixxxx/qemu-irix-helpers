@@ -1,0 +1,71 @@
+#! /bin/bash
+
+# $BASE is the installation base for your wrapper scripts
+if [ -z "$BASE" ]; then
+	BASE=/usr/local/bin
+fi
+# default wrapper scripts
+QEMU32=$BASE/qemu-irix-wrapper
+QEMUN32=$BASE/qemu-irixn32-wrapper
+QEMU64=$BASE/qemu-irix64-wrapper
+# parameter override of wrappers?
+if [ -n "$1" ]; then QEMU32=$1; fi
+if [ -n "$2" ]; then QEMUN32=$2; fi
+if [ -n "$3" ]; then QEMU64=$3; fi
+
+# delete old binfmt entries
+[ -e /proc/sys/fs/binfmt_misc/irix32 ] && echo -1 > /proc/sys/fs/binfmt_misc/irix32
+[ -e /proc/sys/fs/binfmt_misc/irix ] && echo -1 > /proc/sys/fs/binfmt_misc/irix
+[ -e /proc/sys/fs/binfmt_misc/irixn32 ] && echo -1 > /proc/sys/fs/binfmt_misc/irixn32
+[ -e /proc/sys/fs/binfmt_misc/irix64 ] && echo -1 > /proc/sys/fs/binfmt_misc/irix64
+
+# definition for 00 and ff bytes
+N='\x00'
+N4=$N$N$N$N
+N8=$N$N$N$N$N$N$N$N
+F=$'\xff'
+F4=$F$F$F$F
+F8=$F$F$F$F$F$F$F$F
+
+# ELF ident:Magic
+EHDR=$'\x7fELF'
+MHDR=$F4
+# ELF ident:Class (32bit=1, 64bit=2)
+EH32=$'\x01'
+EH64=$'\x02'
+MHCL=$F
+# ELF ident:Data (MSB=2)
+EHMSB=$'\x02'
+MHDAT=$F
+# ELF ident:Version (1)
+EHVER=$'\x01'
+MHVER=$F
+# ELF ident:Abi (IRIX=8, ignored since not all executables have this correct)
+EHABI=$N
+MHABI=$N
+# ELF type (executable=2)
+ETYPE=$N$'\x02'
+MTYPE=$F$'\xfe'
+# ELF machine (MIPS=8)
+EMACH=$N$'\x08'
+MMACH=$F$F
+# ELF version (1)
+EVERS=$N$N$N$'\x01'
+MVERS=$F4
+# ELF flags (MIPS1..MIPS4=0x10000000..0x40000000, O32=MIPS1/2, N32=MIPS3/4)
+EFLGO=$N #$N$N$N
+EFLGN=$'\x20' #$N$N$N
+MFLAG=$'\xef' #$N$N$N
+
+# magic and masks for binfmt
+HEADO32=$EHDR$EH32$EHMSB$EHVER$EHABI$N8$ETYPE$EMACH$EVERS$N4$N4$N4$EFLGO
+HEADN32=$EHDR$EH32$EHMSB$EHVER$EHABI$N8$ETYPE$EMACH$EVERS$N4$N4$N4$EFLGN
+MASK32=$MHDR$MHCL$MHDAT$MHVER$MHABI$F8$MTYPE$MMACH$MVERS$N4$N4$N4$MFLAG
+HEAD64=$EHDR$EH64$EHMSB$EHVER$EHABI$N8$ETYPE$EMACH
+MASK64=$MHDR$MHCL$MHDAT$MHVER$MHABI$F8$MTYPE$MMACH
+
+# install binfmts for IRIX
+echo  :irix:M::${HEADO32}:${MASK32}:${QEMU32}:P > /proc/sys/fs/binfmt_misc/register
+echo  :irixn32:M::${HEADN32}:${MASK32}:${QEMUN32}:P > /proc/sys/fs/binfmt_misc/register
+echo  :irix64:M::${HEAD64}:${MASK64}:${QEMU64}:P > /proc/sys/fs/binfmt_misc/register
+

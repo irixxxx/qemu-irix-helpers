@@ -1,0 +1,13 @@
+#! /bin/sh
+
+ex=$1; shift
+a0=$1; shift
+
+export QEMU_RESERVED_VA=1G
+export QEMU_LD_PREFIX=$SOLARISROOT
+export QEMU_SET_ENV=LANG=C
+
+# the linux X11 session management is incompatible with solaris
+SESSION_MANAGER=
+
+exec qemu-solaris -0 $a0 $ex "$@"

@@ -1,0 +1,11 @@
+#! /bin/sh
+
+IRIXROOT=/usr/share/irix/root
+IGLROOT=/usr/share/irix/igl
+
+export IGL_YIELD=2
+export QEMU_RESERVED_VA=1G
+export QEMU_LD_PREFIX=$IGLROOT:$IRIXROOT
+export QEMU_SET_ENV="LANG=C"
+
+exec $IRIXROOT/usr/sbin/ep -S
