@@ -194,7 +194,9 @@ class Idb
     # bind the 1st unused entry for this name to its archive position
     def setdata(name, arc, pos)
 	@entries.each { |e|
-	    if e[:path] == name && e[:size] && ! e[:_archive] && e[:subsystem].start_with?(arc.name)
+	    if e[:path] == name && e[:size] && ! e[:_archive] && (
+			e[:subsystem].start_with?(arc.name) || arc.name.start_with?(e[:subsystem].gsub(/\..*$/, '')) ||
+			e[:unknown].start_with?(arc.name) || arc.name.start_with?(e[:unknown].gsub(/\..*$/, '')))
 		e[:_archive] = arc
 		e[:_position] = pos
 		return _length(e)
