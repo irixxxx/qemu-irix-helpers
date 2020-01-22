@@ -30,7 +30,7 @@ grep -e '\.so\>' -e '\<rld' $(find "$D" -name '*.idb') |
 			if [ "$cn" != "$n" -a -n "$cs" ]; then
 				# idb file changed, install stuff from old idb
 				echo "*** from $cn install $co:"
-				./inst.rb i "$cn" $cs -r"$R" $*
+                $(dirname $0)/inst.rb i "$cn" $cs -r"$R" $*
 				co=""; cs="";
 			fi
 			co="$co $s"; cs="$cs -s$s"
@@ -39,6 +39,6 @@ grep -e '\.so\>' -e '\<rld' $(find "$D" -name '*.idb') |
 		# install leftover packages from last idb
 		if [ -n "$cs" ]; then
 			echo "*** from $cn install $co:"
-			./inst.rb i "$cn" $cs -r"$R" $*
+			$(dirname $0)/inst.rb i "$cn" $cs -r"$R" $*
 		fi
 	)
